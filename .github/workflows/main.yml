@@ -9,7 +9,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            file: target/release/intersystems-ls
+            target: linux-x86_64
+          - os: windows-latest
+            file: target/release/intersystems-ls.exe
+            target: windows-x86_64
+          - os: macos-latest
+            file: target/release/intersystems-ls
+            target: darwin-x86_64
     steps:
       - uses: actions/checkout@v2
       - uses: actions/checkout@v2
@@ -25,3 +34,12 @@ jobs:
         with:
           command: build
           args: --bins --release --locked
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ matrix.file }}
+  combine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+      - run: ls -laR
