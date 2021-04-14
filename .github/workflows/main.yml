@@ -44,3 +44,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
       - run: ls -laR
+      - uses: actions/upload-artifact@v2
+        with:
+          name: interystems-ls
