@@ -42,7 +42,7 @@ futures = "0.3"
 # jsonrpc = {version = "0.12.0", optional = true }
 # jsonrpc-derive = {version = "17.0.0", optional = true }
 chrono = "0.4.19"
-irisnative = {path = "../rust-irisnative"}
+irisnative = {path = "crates/rust-irisnative"}
 jsonrpc = {path = "crates/jsonrpc", optional = true}
 jsonrpc-derive = {path = "crates/jsonrpc_derive", optional = true}
 log = "0.4"
