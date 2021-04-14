@@ -61,28 +61,17 @@ impl ConnectionManager {
   }
 
   pub fn connect(&self) -> Option<Connection> {
-    if let Ok(connection) = Connection::connect(
-      String::from("localhost"),
-      1972,
-      String::from("USER"),
-      String::from("_SYSTEM"),
-      String::from("SYS"),
-    ) {
-      Some(connection)
+    if let Some(ConnectionSettings {
+    	host, super_port, ns, username, password, ..
+    }) = self.connection_settings.get() {
+    	if let Ok(connection) = Connection::connect(host.to_owned(), super_port.to_owned(), ns.to_owned(), username.to_owned(), password.to_owned()) {
+    		Some(connection)
+    	} else {
+    		None
+    	}
     } else {
-      None
+    	None
     }
-    // if let Some(ConnectionSettings {
-    // 	host, super_port, ns, username, password, ..
-    // }) = self.connection_settings.get() {
-    // 	if let Ok(connection) = Connection::connect(host.to_owned(), super_port.to_owned(), ns.to_owned(), username.to_owned(), password.to_owned()) {
-    // 		Some(connection)
-    // 	} else {
-    // 		None
-    // 	}
-    // } else {
-    // 	None
-    // }
   }
 
   pub async fn productions(&self) -> Vec<Production> {

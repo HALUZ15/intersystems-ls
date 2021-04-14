@@ -40,6 +40,7 @@ jobs:
           path: ${{ matrix.file }}
   combine:
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/download-artifact@v2
       - run: ls -laR
