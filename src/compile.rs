@@ -4,9 +4,9 @@ use crate::{
   protocol::*,
 };
 use async_trait::async_trait;
-use log::{debug, error};
-// use std::fs::OpenOptions;
-// use std::io::Write;
+use log::{error};
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -51,8 +51,11 @@ where
       for line in doc.text.lines() {
         lines.push(String::from(line));
       }
-      debug!("compile: \n{:?}", lines);
-      let mut loaded: String = String::default();
+      while lines[lines.len() - 1].len() == 0 {
+        lines.pop();
+      }
+      // new_content.push(String::default());
+    let mut loaded: String = String::default();
       let mut success = false;
       let output = conn.load(&filename, "ck", lines.clone(), &mut loaded, &mut success);
       self
@@ -63,17 +66,25 @@ where
         })
         .await;
       if success {
-        let new_content: Vec<String> = conn.export_udl(loaded.as_str());
-        if new_content != lines {
-          debug!("file changed: {:?}", loaded);
-          // let file = OpenOptions::new()
-          //   .read(true)
-          //   .write(true)
-          //   .open(path)
-          //   .unwrap();
-          // if let Ok(_) = file.write_all(new_content) {
-          //   file.flush().unwrap();
-          // }
+        let mut new_content: Vec<String> = conn.export_udl(loaded.as_str());
+        while new_content[new_content.len() - 1].len() == 0 {
+          new_content.pop();
+        }
+        // new_content.push(String::default());
+        if new_content.len() > 0 && new_content != lines {
+          let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
+            .unwrap();
+          file.write(new_content[0].as_bytes()).unwrap();
+          new_content.remove(0);
+          for line in new_content {
+            file.write(b"\n").unwrap();
+            file.write(line.as_bytes()).unwrap();
+          }
+          file.flush().unwrap();
         }
         CompileResult {
           status: CompileStatus::Success,
