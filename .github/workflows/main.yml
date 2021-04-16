@@ -38,14 +38,43 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: ${{ matrix.file }}
-  publish:
+  beta:
     runs-on: ubuntu-latest
+    if: (github.event_name == 'push')
     needs: build
     steps:
+      - uses: actions/checkout@v2
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
       - uses: actions/download-artifact@v2
-      - run: ls -laR
-      - uses: actions/upload-artifact@v2
         with:
-          name: interystems-ls
-          path: '*'
-
+          path: dist
+      - id: set-version
+        run: |
+          NAME=`sed -n '0,/^name = "\(.*\)".*/s//\1/p' Cargo.toml`
+          VERSION=`sed -n '0,/^version = "\(.*\)".*/s//\1/p' Cargo.toml`
+          git tag -l | cat
+          [ $GITHUB_EVENT_NAME == 'push' ] && VERSION+=-beta && VERSION+=.$(($(git tag -l "v$VERSION.*" | sort -nt. -k4 2>/dev/null | tail -1 | cut -d. -f4)+1))
+          [ $GITHUB_EVENT_NAME == 'pull_request' ] && VERSION+=-dev.${{ github.event.pull_request.number }}
+          echo ::set-output name=version::$VERSION
+          echo ::set-output name=name::$NAME
+          cd dist && tar -czvf ../${NAME}.tgz . && cd ..
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.set-version.outputs.version }}
+          release_name: v${{ steps.set-version.outputs.version }}
+          prerelease: true
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        if: runner.os == 'Linux'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.set-version.outputs.name }}.tgz
+          asset_name: ${{ steps.set-version.outputs.name }}.tgz
+          asset_content_type: application/tar+gzip
