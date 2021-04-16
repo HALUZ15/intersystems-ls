@@ -38,7 +38,7 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: ${{ matrix.file }}
-  combine:
+  publish:
     runs-on: ubuntu-latest
     needs: build
     steps:
