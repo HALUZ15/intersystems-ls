@@ -10,4 +10,4 @@ A cross-platform implementation of the [Language Server Protocol](https://micros
 
 * [VSCode Extension](https://github.com/caretdev/vscode-intersystems-iris)
 * [IntelliJ IDEA Plugin](https://github.com/caretdev/intellij-intersystems)
-* [SublimeText](docs/SublimeText.md)
+* [SublimeText](https://github.com/caretdev/intersystems-ls/blob/main/docs/SublimeText.md)
