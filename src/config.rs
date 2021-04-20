@@ -1,8 +1,8 @@
 use crate::protocol::*;
 use futures::lock::Mutex;
-use std::sync::Arc;
+use log::{error, warn};
 use serde::de::DeserializeOwned;
-use log::{error,warn};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ConfigManager<C> {
@@ -25,9 +25,7 @@ impl<C: LspClient + Send + Sync + 'static> ConfigManager<C> {
     }
 
     pub async fn register(&self) {
-        if !self.client_capabilities.has_pull_configuration_support()
-            && self.client_capabilities.has_push_configuration_support()
-        {
+        if self.client_capabilities.has_push_configuration_support() {
             let registration = Registration {
                 id: "pull-config".into(),
                 method: "workspace/didChangeConfiguration".into(),

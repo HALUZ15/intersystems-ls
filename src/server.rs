@@ -11,7 +11,7 @@ use futures::lock::Mutex;
 use irisnative::connection::*;
 use jsonrpc::{server::Result, Middleware};
 use jsonrpc_derive::{jsonrpc_method, jsonrpc_server};
-use log::trace;
+use log::debug;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{mem, path::PathBuf, sync::Arc};
@@ -79,7 +79,7 @@ impl<C: LspClient + Send + Sync + 'static> InterSystemsLspServer<C> {
 
   #[jsonrpc_method("initialize", kind = "request")]
   pub async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
-    trace!("initialize: {:?}", params);
+    debug!("initialize: {:?}", params);
     self
       .client_capabilities
       .set(Arc::new(params.capabilities))
@@ -127,6 +127,13 @@ impl<C: LspClient + Send + Sync + 'static> InterSystemsLspServer<C> {
   pub async fn initialized(&self, _params: InitializedParams) {
     self.action_manager.push(Action::PullConfiguration).await;
     self.action_manager.push(Action::RegisterCapabilities).await;
+    self
+      .client
+      .log_message(LogMessageParams {
+        typ: MessageType::Log,
+        message: "Language Server Started".into(),
+      })
+      .await;
   }
 
   #[jsonrpc_method("shutdown", kind = "request")]
@@ -135,9 +142,7 @@ impl<C: LspClient + Send + Sync + 'static> InterSystemsLspServer<C> {
   }
 
   #[jsonrpc_method("exit", kind = "notification")]
-  pub async fn exit(&self, _params: ()) {
-    trace!("exit");
-  }
+  pub async fn exit(&self, _params: ()) {}
 
   #[jsonrpc_method("$/cancelRequest", kind = "notification")]
   pub async fn cancel_request(&self, _params: CancelParams) {}
@@ -191,11 +196,18 @@ impl<C: LspClient + Send + Sync + 'static> InterSystemsLspServer<C> {
 
   #[jsonrpc_method("workspace/didChangeConfiguration", kind = "notification")]
   pub async fn did_change_configuration(&self, params: DidChangeConfigurationParams) {
-    trace!("did_change_configuration: {:?}", params);
-    let config_manager = self.config_manager();
-    config_manager.push(params.settings).await;
-    let options = config_manager.get().await;
-    self.connection_manager().reparse(&options).await;
+    debug!("did_change_configuration: {:?}", params);
+    match params.settings {
+      serde_json::Value::Null => {
+        self.pull_configuration().await;
+      }
+      _ => {
+        let config_manager = self.config_manager();
+        config_manager.push(params.settings).await;
+        let options = config_manager.get().await;
+        self.connection_manager().reparse(&options).await;
+      }
+    }
     // self.workspace.reparse(&options).await;
   }
 

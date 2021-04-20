@@ -4,11 +4,8 @@ use crate::{
   protocol::*,
 };
 use async_trait::async_trait;
-use log::{error};
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::PathBuf;
-use std::sync::Arc;
+use log::error;
+use std::{fs::OpenOptions, io::Write, path::PathBuf, sync::Arc};
 
 pub struct CompileProvider<C> {
   client: Arc<C>,
@@ -54,8 +51,7 @@ where
       while lines[lines.len() - 1].len() == 0 {
         lines.pop();
       }
-      // new_content.push(String::default());
-    let mut loaded: String = String::default();
+      let mut loaded: String = String::default();
       let mut success = false;
       let output = conn.load(&filename, "ck", lines.clone(), &mut loaded, &mut success);
       self
@@ -65,6 +61,9 @@ where
           message: output,
         })
         .await;
+      while lines[lines.len() - 1].len() == 0 {
+        lines.pop();
+      }
       if success {
         let mut new_content: Vec<String> = conn.export_udl(loaded.as_str());
         while new_content[new_content.len() - 1].len() == 0 {
